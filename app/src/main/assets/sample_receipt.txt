@@ -1,0 +1,16 @@
+WHOLE FOODS MARKET
+123 Main Street
+Date: 15/03/2024
+
+Organic Milk 2L          4.99
+Whole Wheat Bread        3.50
+Free Range Eggs          5.25
+Cheddar Cheese 500g      7.99
+Fresh Tomatoes           2.89
+Baby Spinach             3.49
+
+Subtotal                28.11
+Tax (8%)                 2.25
+Total                   30.36
+
+Thank you for shopping!
