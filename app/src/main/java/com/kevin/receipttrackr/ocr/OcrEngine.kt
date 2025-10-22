@@ -41,24 +41,25 @@ class OcrEngine @Inject constructor(
         val timeMs = measureTimeMillis {
             try {
                 // Load and downscale bitmap
-                bitmap = loadAndDownscaleBitmap(uri)
-                if (bitmap == null) {
+                val loadedBitmap = loadAndDownscaleBitmap(uri)
+                if (loadedBitmap == null) {
                     Logger.e(tag, "Failed to load bitmap")
                     return@measureTimeMillis
                 }
+                bitmap = loadedBitmap
 
-                Logger.d(tag, "Bitmap size: ${bitmap!!.width}x${bitmap!!.height}")
+                Logger.d(tag, "Bitmap size: ${loadedBitmap.width}x${loadedBitmap.height}")
 
                 // Create thumbnail for storage (to avoid memory issues)
                 thumbnailBitmap = Bitmap.createScaledBitmap(
-                    bitmap!!,
-                    (bitmap!!.width * 0.3f).toInt(),
-                    (bitmap!!.height * 0.3f).toInt(),
+                    loadedBitmap,
+                    (loadedBitmap.width * 0.3f).toInt(),
+                    (loadedBitmap.height * 0.3f).toInt(),
                     true
                 )
 
                 // Run OCR
-                val image = InputImage.fromBitmap(bitmap!!, 0)
+                val image = InputImage.fromBitmap(loadedBitmap, 0)
                 val result = recognizer.process(image).await()
 
                 text = result.text

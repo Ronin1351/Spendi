@@ -52,26 +52,26 @@ class Categorizer @Inject constructor(
     )
 
     suspend fun categorize(itemName: String): String {
-		val lowerName = itemName.lowercase()
+        val lowerName = itemName.lowercase()
 
-		// First check user-defined rules (higher priority)
-		val userRules = settingsStore.keywordRules.first()
-		for ((keyword, category) in userRules) {
-			if (lowerName.contains(keyword)) {
-				Logger.d(tag, "User rule matched: '$keyword' -> $category")
-				return category
-			}
-		}
+        // First check user-defined rules (higher priority)
+        val userRules = settingsStore.keywordRules.first()
+        for ((keyword, category) in userRules) {
+            if (lowerName.contains(keyword)) {
+                Logger.d(tag, "User rule matched: '$keyword' -> $category")
+                return category
+            }
+        }
 
-		// Then check built-in rules
-		for ((keyword, category) in builtInRules) {
-			if (lowerName.contains(keyword)) {
-				Logger.d(tag, "Built-in rule matched: '$keyword' -> $category")
-				return category
-			}
-		}
+        // Then check built-in rules
+        for ((keyword, category) in builtInRules) {
+            if (lowerName.contains(keyword)) {
+                Logger.d(tag, "Built-in rule matched: '$keyword' -> $category")
+                return category
+            }
+        }
 
-		Logger.d(tag, "No match for '$itemName', using Other")
-		return "Other"
-	}
+        Logger.d(tag, "No match for '$itemName', using Other")
+        return "Other"
+    }
 }
