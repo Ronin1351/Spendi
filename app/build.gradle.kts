@@ -64,6 +64,7 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+    arg("dagger.hilt.android.internal.disableAndroidSuperclassValidation", "true")
 }
 
 dependencies {
