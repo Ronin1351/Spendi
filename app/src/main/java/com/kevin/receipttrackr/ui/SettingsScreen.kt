@@ -14,7 +14,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kevin.receipttrackr.settings.SettingsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,7 +22,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsStore: SettingsStore
 ) : ViewModel() {
-    val currency: StateFlow<String> = settingsStore.currency as StateFlow<String>
+    val currency: Flow<String> = settingsStore.currency
     
     fun updateCurrency(currency: String) {
         viewModelScope.launch {
