@@ -1,5 +1,6 @@
 package com.kevin.receipttrackr
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,7 +17,7 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Import : Screen("import")
     object Review : Screen("review/{imageUri}") {
-        fun createRoute(imageUri: String) = "review/$imageUri"
+        fun createRoute(imageUri: String) = "review/${Uri.encode(imageUri)}"
     }
     object Details : Screen("details/{receiptId}") {
         fun createRoute(receiptId: Long) = "details/$receiptId"
@@ -57,7 +58,8 @@ fun AppNav() {
             route = Screen.Review.route,
             arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
         ) { backStackEntry ->
-            val imageUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val encodedUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val imageUri = Uri.decode(encodedUri)
             ReviewScreen(
                 imageUri = imageUri,
                 onSaved = { receiptId ->

@@ -51,10 +51,19 @@ class Categorizer @Inject constructor(
         "book" to "Shopping", "toy" to "Shopping"
     )
 
-    fun categorize(itemName: String): String {
+    suspend fun categorize(itemName: String): String {
 		val lowerName = itemName.lowercase()
 
-		// Check built-in rules (synchronous, no need for user rules during parsing)
+		// First check user-defined rules (higher priority)
+		val userRules = settingsStore.keywordRules.first()
+		for ((keyword, category) in userRules) {
+			if (lowerName.contains(keyword)) {
+				Logger.d(tag, "User rule matched: '$keyword' -> $category")
+				return category
+			}
+		}
+
+		// Then check built-in rules
 		for ((keyword, category) in builtInRules) {
 			if (lowerName.contains(keyword)) {
 				Logger.d(tag, "Built-in rule matched: '$keyword' -> $category")

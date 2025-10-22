@@ -60,15 +60,13 @@ class SettingsStore @Inject constructor(
     }
 
     suspend fun getKeywordRulesSnapshot(): Map<String, String> {
-        var result = emptyMap<String, String>()
-        context.dataStore.data.map { preferences ->
+        return context.dataStore.data.map { preferences ->
             val jsonString = preferences[keywordRulesKey] ?: "{}"
-            result = try {
-                Json.decodeFromString(jsonString)
+            try {
+                Json.decodeFromString<Map<String, String>>(jsonString)
             } catch (e: Exception) {
                 emptyMap()
             }
-        }.collect {}
-        return result
+        }.first()
     }
 }
