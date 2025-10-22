@@ -240,11 +240,17 @@ private fun LineItemCard(
                 )
 
                 OutlinedTextField(
-                    value = Formatters.formatCurrency(item.amountCents),
-                    onValueChange = { },
-                    label = { Text("Amount") },
+                    value = String.format("%.2f", item.amountCents / 100.0),
+                    onValueChange = { newValue ->
+                        val amount = newValue.replace(",", "").toDoubleOrNull()
+                        if (amount != null) {
+                            val cents = (amount * 100).toInt()
+                            onItemChange(item.copy(amountCents = cents))
+                        }
+                    },
+                    label = { Text("Amount ($)") },
                     modifier = Modifier.weight(1f),
-                    enabled = false
+                    singleLine = true
                 )
             }
 

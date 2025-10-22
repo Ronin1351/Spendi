@@ -14,7 +14,7 @@ class Parser @Inject constructor(
 ) {
     private val tag = "Parser"
 
-    fun parse(ocrText: String): ParsedReceipt {
+    suspend fun parse(ocrText: String): ParsedReceipt {
         Logger.d(tag, "Parsing OCR text (${ocrText.length} chars)")
         val lines = ocrText.lines().map { it.trim() }.filter { it.isNotEmpty() }
 
@@ -82,8 +82,8 @@ class Parser @Inject constructor(
             }
         }
 
-        Logger.d(tag, "No date found, using current time")
-        return System.currentTimeMillis()
+        Logger.d(tag, "No date found, returning null")
+        return null
     }
 
     private fun extractTotals(lines: List<String>): Map<String, Int?> {
@@ -113,18 +113,22 @@ class Parser @Inject constructor(
         return mapOf("subtotal" to subtotal, "tax" to tax, "total" to total)
     }
 
-    private fun extractLineItems(lines: List<String>, totals: Map<String, Int?>): List<ParsedLineItem> {
+    private suspend fun extractLineItems(lines: List<String>, totals: Map<String, Int?>): List<ParsedLineItem> {
         val items = mutableListOf<ParsedLineItem>()
         val priceRegex = Regex("""([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|\d+\.\d{2}|\d+)$""")
         val qtyRegex = Regex("""^(\d+)\s*[@x]""", RegexOption.IGNORE_CASE)
 
-        val totalLines = setOf("subtotal", "tax", "vat", "total", "service", "balance", "change", "payment")
+        val totalKeywords = setOf("subtotal", "tax", "vat", "gst", "service", "balance", "change", "payment", "amount due", "cash")
 
         for (line in lines) {
-            val lowerLine = line.lowercase()
+            val lowerLine = line.lowercase().trim()
 
-            // Skip total lines
-            if (totalLines.any { lowerLine.contains(it) }) continue
+            // Skip total lines - use word boundary matching to avoid false positives
+            val isTotalLine = totalKeywords.any { keyword ->
+                lowerLine.startsWith(keyword) || lowerLine.endsWith(keyword) ||
+                lowerLine.matches(Regex(".*\\b${Regex.escape(keyword)}\\b.*"))
+            }
+            if (isTotalLine && lowerLine.split(" ").size <= 3) continue
 
             // Must have a price at end
             val priceMatch = priceRegex.find(line) ?: continue
@@ -146,7 +150,7 @@ class Parser @Inject constructor(
                 name = name.substring(qtyMatch.value.length).trim()
             }
 
-            // Skip if name is too short or looks like a total
+            // Skip if name is too short
             if (name.length < 2) continue
 
             val category = categorizer.categorize(name)
@@ -168,9 +172,28 @@ class Parser @Inject constructor(
 
     private fun parsePriceToCents(priceStr: String): Int {
         return try {
-            val price = priceStr.replace(",", "").toDouble()
-            (price * 100).toInt()
+            // Remove currency symbols and whitespace
+            var cleanStr = priceStr.replace(Regex("[\\s$€£¥₹]"), "")
+
+            // Handle negative prices (refunds)
+            val isNegative = cleanStr.startsWith("-")
+            cleanStr = cleanStr.removePrefix("-")
+
+            // Handle comma as thousand separator (e.g., 1,250.99)
+            if (cleanStr.contains(",") && cleanStr.contains(".")) {
+                cleanStr = cleanStr.replace(",", "")
+            }
+            // Handle comma as decimal separator (European format, e.g., 12,50)
+            else if (cleanStr.contains(",") && !cleanStr.contains(".")) {
+                cleanStr = cleanStr.replace(",", ".")
+            }
+
+            val price = cleanStr.toDoubleOrNull() ?: return 0
+            val cents = (price * 100).toInt()
+
+            if (isNegative) -cents else cents
         } catch (e: Exception) {
+            Logger.e(tag, "Failed to parse price: $priceStr - ${e.message}")
             0
         }
     }

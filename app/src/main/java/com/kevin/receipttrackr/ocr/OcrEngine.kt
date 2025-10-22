@@ -34,6 +34,7 @@ class OcrEngine @Inject constructor(
         Logger.d(tag, "Processing image: $uri")
 
         var bitmap: Bitmap? = null
+        var thumbnailBitmap: Bitmap? = null
         var text = ""
         var blockCount = 0
 
@@ -48,6 +49,14 @@ class OcrEngine @Inject constructor(
 
                 Logger.d(tag, "Bitmap size: ${bitmap!!.width}x${bitmap!!.height}")
 
+                // Create thumbnail for storage (to avoid memory issues)
+                thumbnailBitmap = Bitmap.createScaledBitmap(
+                    bitmap!!,
+                    (bitmap!!.width * 0.3f).toInt(),
+                    (bitmap!!.height * 0.3f).toInt(),
+                    true
+                )
+
                 // Run OCR
                 val image = InputImage.fromBitmap(bitmap!!, 0)
                 val result = recognizer.process(image).await()
@@ -59,6 +68,11 @@ class OcrEngine @Inject constructor(
 
             } catch (e: Exception) {
                 Logger.e(tag, "OCR failed: ${e.message}")
+                thumbnailBitmap?.recycle()
+                thumbnailBitmap = null
+            } finally {
+                // Recycle the full-size bitmap to free memory
+                bitmap?.recycle()
             }
         }
 
@@ -68,7 +82,7 @@ class OcrEngine @Inject constructor(
             text = text,
             blockCount = blockCount,
             processingTimeMs = timeMs,
-            bitmap = bitmap
+            bitmap = thumbnailBitmap
         )
     }
 

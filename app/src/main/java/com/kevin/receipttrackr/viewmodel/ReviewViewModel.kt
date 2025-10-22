@@ -83,12 +83,19 @@ class ReviewViewModel @Inject constructor(
 
                 val currency = settingsStore.currency.first()
 
+                // Calculate total with proper fallback
+                val calculatedTotal = parsed.totalCents ?: run {
+                    val subtotal = parsed.subtotalCents ?: parsed.items.sumOf { it.amountCents }
+                    val tax = parsed.taxCents ?: 0
+                    subtotal + tax
+                }
+
                 _state.value = ReviewState.Success(
                     merchant = parsed.merchant,
                     dateEpochMs = parsed.dateEpochMs ?: System.currentTimeMillis(),
-                    subtotalCents = parsed.subtotalCents ?: 0,
+                    subtotalCents = parsed.subtotalCents ?: parsed.items.sumOf { it.amountCents },
                     taxCents = parsed.taxCents ?: 0,
-                    totalCents = parsed.totalCents ?: parsed.items.sumOf { it.amountCents },
+                    totalCents = calculatedTotal,
                     items = parsed.items.map { it.toEditable() },
                     imageUri = imageUri,
                     rawOcrText = ocrResult.text
@@ -140,8 +147,8 @@ class ReviewViewModel @Inject constructor(
                 LineItem(
                     receiptId = 0, // Will be set by repository
                     name = item.name,
-                    qty = item.qty,
-                    unitCents = item.amountCents / item.qty,
+                    qty = item.qty.coerceAtLeast(1), // Ensure qty is at least 1
+                    unitCents = if (item.qty > 0) item.amountCents / item.qty else item.amountCents,
                     amountCents = item.amountCents,
                     category = item.category,
                     rawText = item.name // Use name as raw text for now
